@@ -1,10 +1,6 @@
-fastapi
-uvicorn
-pydantic
 numpy
 pandas
 scikit-learn
-tensorflow
 matplotlib
 seaborn
 joblib
