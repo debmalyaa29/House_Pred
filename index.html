@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>House Price Prediction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --navy: #dbe7ff;
+    --blue: #3b82f6;
+    --blue-dark: #2f6fe0;
+    --blue-tint: #101d3a;
+    --bg: #0a1020;
+    --card: #111a2e;
+    --field: #0c1424;
+    --line: #24304a;
+    --line-strong: #34446a;
+    --text: #e6ecf8;
+    --muted: #93a1bd;
+    --danger: #ff8a80;
+    --danger-bg: #2a1518;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px rgba(0,0,0,.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+    font-family: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+  }
+  header {
+    background: linear-gradient(135deg, #0b1a3d 0%, #16337a 100%);
+    color: #fff; padding: 40px 20px 88px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .logo {
+    width: 52px; height: 52px; flex: none; border-radius: 14px;
+    background: rgba(255,255,255,.14); display: grid; place-items: center;
+  }
+  h1 { margin: 0; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 800; letter-spacing: -.02em; }
+  header p { margin: 4px 0 0; color: #c9d8f5; font-size: 1rem; }
+
+  main { flex: 1; width: 100%; max-width: 860px; margin: -56px auto 0; padding: 0 20px 40px; }
+  .card {
+    background: var(--card); border-radius: 20px; box-shadow: var(--shadow);
+    border: 1px solid var(--line); padding: 32px;
+  }
+  .card h2 { margin: 0 0 4px; font-size: 1.25rem; font-weight: 700; }
+  .card .hint { margin: 0 0 24px; color: var(--muted); font-size: .92rem; }
+
+  form { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: .88rem; font-weight: 600; }
+  input, select {
+    font: inherit; color: var(--text); background: var(--field);
+    border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input::placeholder { color: #6b7a99; }
+  input:hover, select:hover { border-color: var(--line-strong); }
+  input:focus, select:focus {
+    outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px rgba(59,130,246,.25);
+  }
+  input.invalid, select.invalid { border-color: var(--danger); background: var(--danger-bg); }
+  option { background: #111a2e; color: #e6ecf8; }
+  .field-error { color: var(--danger); font-size: .78rem; min-height: 0; display: none; }
+  .field.has-error .field-error { display: block; }
+
+  .actions { grid-column: 1 / -1; margin-top: 8px; }
+  button {
+    font: inherit; font-weight: 700; font-size: 1.02rem; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    background: var(--blue); color: #fff; border: 0; border-radius: 14px;
+    padding: 15px 20px; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(59,130,246,.3);
+    transition: background .15s, transform .15s, box-shadow .15s;
+  }
+  button:hover:not(:disabled) { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 10px 22px rgba(59,130,246,.4); }
+  button:focus-visible { outline: 3px solid rgba(59,130,246,.55); outline-offset: 2px; }
+  button:disabled { opacity: .8; cursor: progress; }
+  .spinner {
+    width: 18px; height: 18px; border-radius: 50%; display: none;
+    border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff;
+    animation: spin .7s linear infinite;
+  }
+  button.loading .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result, .error { margin-top: 24px; display: none; }
+  .result.show, .error.show { display: block; animation: rise .3s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .result { background: var(--blue-tint); border-color: #22366a; text-align: center; padding: 32px 24px; }
+  .result .label { color: var(--muted); font-weight: 600; margin: 0; }
+  .result .value {
+    margin: 8px 0 12px; font-size: clamp(2.2rem, 8vw, 3.4rem);
+    font-weight: 800; letter-spacing: -.03em; color: var(--navy);
+  }
+  .result .note {
+    display: inline-flex; align-items: center; gap: 8px; margin: 0;
+    font-size: .85rem; color: #8db4ff; font-weight: 600;
+    background: var(--card); border: 1px solid #22366a; border-radius: 999px; padding: 6px 14px;
+  }
+  .error {
+    background: var(--danger-bg); border: 1px solid #5a2a2e; border-radius: 16px;
+    padding: 16px 20px; color: var(--danger);
+  }
+  .error strong { display: block; margin-bottom: 2px; }
+  .error span { font-size: .92rem; }
+
+  footer { text-align: center; padding: 22px 20px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); background: var(--card); }
+
+  @media (max-width: 640px) {
+    form { grid-template-columns: 1fr; }
+    .card { padding: 22px 18px; border-radius: 18px; }
+    header { padding: 32px 18px 80px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap brand">
+    <div class="logo" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/>
+        <circle cx="12" cy="14.5" r="1.6"/><path d="M12 12.9V11M10.6 15.3 9.2 16M13.4 15.3l1.4.7"/>
+      </svg>
+    </div>
+    <div>
+      <h1>House Price Prediction</h1>
+      <p>Predict the estimated median house value using machine learning</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="card" aria-labelledby="form-title">
+    <h2 id="form-title">Enter House Details</h2>
+    <p class="hint">All fields are required.</p>
+
+    <form id="predict-form" novalidate>
+      <div class="field">
+        <label for="longitude">Longitude</label>
+        <input id="longitude" name="longitude" type="number" step="any" placeholder="Enter longitude" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="latitude">Latitude</label>
+        <input id="latitude" name="latitude" type="number" step="any" placeholder="Enter latitude" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="housing_median_age">Housing Median Age</label>
+        <input id="housing_median_age" name="housing_median_age" type="number" step="any" min="0" placeholder="Enter housing age" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="total_rooms">Total Rooms</label>
+        <input id="total_rooms" name="total_rooms" type="number" step="any" min="0" placeholder="Enter total rooms" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="total_bedrooms">Total Bedrooms</label>
+        <input id="total_bedrooms" name="total_bedrooms" type="number" step="any" min="0" placeholder="Enter total bedrooms" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="population">Population</label>
+        <input id="population" name="population" type="number" step="any" min="0" placeholder="Enter population" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="households">Households</label>
+        <input id="households" name="households" type="number" step="any" min="0" placeholder="Enter households" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="median_income">Median Income</label>
+        <input id="median_income" name="median_income" type="number" step="0.01" min="0" placeholder="Enter median income" required>
+        <span class="field-error"></span>
+      </div>
+      <div class="field">
+        <label for="ocean_proximity">Ocean Proximity</label>
+        <select id="ocean_proximity" name="ocean_proximity" required>
+          <option value="" disabled selected>Select proximity</option>
+          <option value="&lt;1H OCEAN">&lt;1H OCEAN</option>
+          <option value="INLAND">INLAND</option>
+          <option value="ISLAND">ISLAND</option>
+          <option value="NEAR BAY">NEAR BAY</option>
+          <option value="NEAR OCEAN">NEAR OCEAN</option>
+        </select>
+        <span class="field-error"></span>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="submit-btn">
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="btn-text">Predict House Price</span>
+        </button>
+      </div>
+    </form>
+
+    <div class="error" id="error" role="alert">
+      <strong>Prediction failed</strong>
+      <span id="error-msg"></span>
+    </div>
+
+    <div class="card result" id="result" aria-live="polite">
+      <p class="label">Estimated House Price</p>
+      <p class="value" id="price">$0.00</p>
+      <p class="note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M19 5l-3 3M8 16l-3 3"/></svg>
+        Prediction generated by the ANN model
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer>House Price Prediction • ANN Machine Learning Project</footer>
+
+<script>
+  // Change this if the API runs on a different origin, e.g. "http://127.0.0.1:8000/predict"
+  // (a different origin needs CORS enabled on the FastAPI app).
+  const API_URL = "/predict";
+
+  const form = document.getElementById("predict-form");
+  const btn = document.getElementById("submit-btn");
+  const btnText = document.getElementById("btn-text");
+  const result = document.getElementById("result");
+  const priceEl = document.getElementById("price");
+  const errorBox = document.getElementById("error");
+  const errorMsg = document.getElementById("error-msg");
+
+  const numericFields = ["longitude", "latitude", "housing_median_age", "total_rooms",
+                         "total_bedrooms", "population", "households", "median_income"];
+
+  const usd = new Intl.NumberFormat("en-US", {
+    style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2
+  });
+
+  function setFieldError(el, message) {
+    const field = el.closest(".field");
+    field.classList.toggle("has-error", !!message);
+    el.classList.toggle("invalid", !!message);
+    field.querySelector(".field-error").textContent = message || "";
+  }
+
+  function validate() {
+    let ok = true;
+    let first = null;
+    [...numericFields, "ocean_proximity"].forEach(id => {
+      const el = document.getElementById(id);
+      let msg = "";
+      if (el.value.trim() === "") msg = "This field is required.";
+      else if (id !== "ocean_proximity" && !Number.isFinite(Number(el.value))) msg = "Enter a valid number.";
+      setFieldError(el, msg);
+      if (msg) { ok = false; first = first || el; }
+    });
+    if (first) first.focus();
+    return ok;
+  }
+
+  form.addEventListener("input", e => {
+    if (e.target.classList.contains("invalid")) setFieldError(e.target, "");
+  });
+
+  function setLoading(on) {
+    btn.disabled = on;
+    btn.classList.toggle("loading", on);
+    btnText.textContent = on ? "Predicting…" : "Predict House Price";
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    result.classList.remove("show");
+    errorBox.classList.remove("show");
+    if (!validate()) return;
+
+    const payload = {};
+    numericFields.forEach(id => payload[id] = Number(document.getElementById(id).value));
+    payload.ocean_proximity = document.getElementById("ocean_proximity").value;
+
+    setLoading(true);
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        let detail = "";
+        try {
+          const err = await res.json();
+          detail = typeof err.detail === "string" ? err.detail
+                 : Array.isArray(err.detail) ? err.detail.map(d => d.msg).join(", ") : "";
+        } catch (_) {}
+        throw new Error(detail || `The server responded with status ${res.status}.`);
+      }
+      const data = await res.json();
+      if (typeof data.prediction !== "number") throw new Error("The server returned an unexpected response.");
+
+      priceEl.textContent = usd.format(data.prediction);
+      result.classList.add("show");
+      result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (err) {
+      const offline = err instanceof TypeError;
+      errorMsg.textContent = offline
+        ? "Could not reach the prediction server. Check that the API is running and try again."
+        : err.message + " Check your inputs and try again.";
+      errorBox.classList.add("show");
+    } finally {
+      setLoading(false);
+    }
+  });
+</script>
+</body>
+</html>
