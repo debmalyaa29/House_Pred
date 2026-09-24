@@ -1,1 +1,3 @@
 /test_gpu.py
+__pycache__/
+*.pyc
